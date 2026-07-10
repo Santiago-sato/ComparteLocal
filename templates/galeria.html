@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galeria de Archivos</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;padding:20px;min-height:100vh}
+.header{text-align:center;color:white;margin-bottom:25px}
+.header h1{font-size:28px;margin-bottom:8px}
+.header p{font-size:15px;opacity:.9}
+.nav-buttons{display:flex;justify-content:center;gap:12px;margin-bottom:25px;flex-wrap:wrap}
+.nav-btn{padding:10px 20px;background:white;color:#667eea;text-decoration:none;border-radius:10px;font-weight:500;font-size:14px;transition:all .3s;box-shadow:0 4px 15px rgba(0,0,0,.2)}
+.nav-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.nav-btn.active{border:2px solid white;box-shadow:0 6px 25px rgba(255,255,255,.4)}
+.filters{max-width:1400px;margin:0 auto 25px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.search-box{flex:1;min-width:200px;padding:10px 15px;border:none;border-radius:10px;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.15);outline:none}
+.search-box:focus{box-shadow:0 2px 15px rgba(102,126,234,.4)}
+.filter-btn{padding:8px 16px;border:2px solid rgba(255,255,255,.5);background:transparent;color:white;border-radius:20px;cursor:pointer;font-size:13px;font-weight:500;transition:all .3s;text-decoration:none}
+.filter-btn:hover{background:rgba(255,255,255,.2)}
+.filter-btn.active{background:white;color:#667eea;border-color:white}
+.empty-state{text-align:center;padding:60px 20px;background:white;border-radius:20px;max-width:500px;margin:0 auto}
+.empty-state .icon{font-size:80px;margin-bottom:20px}
+.empty-state h2{color:#333;margin-bottom:10px}
+.empty-state p{color:#666;margin-bottom:20px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;max-width:1400px;margin:0 auto}
+.card{background:white;border-radius:15px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,.2);transition:all .3s}
+.card:hover{transform:translateY(-5px);box-shadow:0 8px 25px rgba(0,0,0,.3)}
+.card-image{width:100%;height:180px;object-fit:cover;cursor:pointer;background:#f5f5f5}
+.card-icon{width:100%;height:180px;display:flex;align-items:center;justify-content:center;font-size:70px;background:linear-gradient(135deg,#f5f5f5 0%,#e0e0e0 100%);cursor:pointer;transition:all .3s}
+.card-icon:hover{transform:scale(1.05)}
+.card-body{padding:14px}
+.card-title{font-size:13px;color:#333;margin-bottom:6px;word-break:break-all;max-height:36px;overflow:hidden}
+.card-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.card-size{font-size:12px;color:#888}
+.card-date{font-size:11px;color:#aaa}
+.badge{display:inline-block;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.badge-imagen{background:#e8f5e9;color:#2e7d32}
+.badge-video{background:#e3f2fd;color:#1565c0}
+.badge-audio{background:#fce4ec;color:#c62828}
+.badge-pdf{background:#fff3e0;color:#e65100}
+.badge-archivo{background:#f3e5f5;color:#6a1b9a}
+.badge-disco{background:#e0e0e0;color:#424242}
+.badge-otro{background:#f5f5f5;color:#616161}
+.card-actions{display:flex;gap:8px}
+.btn{flex:1;padding:8px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:all .3s;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px}
+.btn-download{background:#4CAF50;color:white}
+.btn-download:hover{background:#45a049}
+.btn-delete{background:#f44336;color:white}
+.btn-delete:hover{background:#da190b}
+.pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:30px;flex-wrap:wrap}
+.page-btn{padding:8px 14px;border:none;border-radius:8px;background:rgba(255,255,255,.25);color:white;font-weight:500;cursor:pointer;text-decoration:none;transition:all .3s;font-size:14px}
+.page-btn:hover{background:rgba(255,255,255,.4)}
+.page-btn.active{background:white;color:#667eea}
+.page-btn.disabled{opacity:.4;pointer-events:none}
+.modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,.95);animation:fadeIn .3s;overflow:auto}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-content{margin:auto;display:block;max-width:90%;max-height:90%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:10px}
+.modal-video{margin:auto;display:block;max-width:95%;max-height:85vh;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:10px;background:black}
+.modal-header{position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,.8);padding:15px 20px;display:flex;justify-content:space-between;align-items:center;z-index:1001}
+.modal-filename{color:white;font-size:16px;font-weight:500}
+.close-modal{color:#f1f1f1;font-size:35px;font-weight:bold;cursor:pointer;transition:.3s;background:none;border:none;padding:0;line-height:1}
+.close-modal:hover{color:#ff4444}
+.info-bar{text-align:center;color:white;margin-bottom:20px;font-size:13px;opacity:.8}
+@media(max-width:768px){.gallery{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}.header h1{font-size:22px}.nav-buttons{flex-direction:column;max-width:300px;margin:0 auto 20px}.filters{flex-direction:column}.search-box{min-width:100%}}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Mis Archivos</h1>
+    <p>{{ total }} archivo(s) en total</p>
+</div>
+
+<div class="nav-buttons">
+    <a href="/" class="nav-btn">Subir</a>
+    <a href="/galeria" class="nav-btn active">Ver Archivos</a>
+    <a href="/qr" class="nav-btn">QR</a>
+</div>
+
+{% if total > 0 %}
+<div class="filters">
+    <input type="text" class="search-box" id="searchBox" placeholder="Buscar archivos..." value="{{ busqueda }}">
+    <a href="/galeria?tipo=&q={{ busqueda }}" class="filter-btn {% if filtro_tipo == '' %}active{% endif %}">Todos</a>
+    {% for tipo in tipos_disponibles %}
+    <a href="/galeria?tipo={{ tipo }}&q={{ busqueda }}" class="filter-btn {% if filtro_tipo == tipo %}active{% endif %}">{{ tipo }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if total == 0 %}
+<div class="empty-state">
+    <div class="icon">&#128193;</div>
+    <h2>{% if busqueda or filtro_tipo %}No se encontraron archivos{% else %}No hay archivos aun{% endif %}</h2>
+    <p>{% if busqueda or filtro_tipo %}Intenta con otra busqueda o filtro{% else %}Sube tu primer archivo para verlo aqui{% endif %}</p>
+    {% if busqueda or filtro_tipo %}
+    <a href="/galeria" class="nav-btn">Limpiar filtros</a>
+    {% else %}
+    <a href="/" class="nav-btn">Subir Archivo</a>
+    {% endif %}
+</div>
+{% else %}
+<div class="info-bar">
+    Mostrando {{ ((page-1)*24)+1 }}-{{ [page*24, total]|min }} de {{ total }}
+    {% if busqueda %} | Buscando: "{{ busqueda }}"{% endif %}
+    {% if filtro_tipo %} | Tipo: {{ filtro_tipo }}{% endif %}
+</div>
+<div class="gallery">
+    {% for archivo in archivos %}
+    <div class="card" id="card-{{ loop.index }}">
+        {% if archivo.tipo == 'imagen' %}
+        <img src="/uploads/{{ archivo.nombre }}" alt="{{ archivo.nombre }}" class="card-image" onclick="openMedia('imagen', '/uploads/{{ archivo.nombre }}', '{{ archivo.nombre }}')">
+        {% elif archivo.tipo == 'video' %}
+        <div class="card-icon" onclick="openMedia('video', '/uploads/{{ archivo.nombre }}', '{{ archivo.nombre }}')">&#127916;</div>
+        {% elif archivo.tipo == 'audio' %}
+        <div class="card-icon" onclick="openMedia('audio', '/uploads/{{ archivo.nombre }}', '{{ archivo.nombre }}')">&#127925;</div>
+        {% elif archivo.tipo == 'pdf' %}
+        <div class="card-icon" onclick="window.open('/uploads/{{ archivo.nombre }}', '_blank')">&#128196;</div>
+        {% elif archivo.tipo == 'archivo' %}
+        <div class="card-icon">&#128230;</div>
+        {% elif archivo.tipo == 'disco' %}
+        <div class="card-icon">&#128191;</div>
+        {% else %}
+        <div class="card-icon">&#128206;</div>
+        {% endif %}
+        <div class="card-body">
+            <div class="card-title">{{ archivo.nombre }}</div>
+            <div class="card-meta">
+                <span class="card-size">{{ archivo.tamaño }} MB</span>
+                <span class="badge badge-{{ archivo.tipo }}">{{ archivo.tipo }}</span>
+            </div>
+            <div class="card-date">{{ archivo.fecha }}</div>
+            <div class="card-actions" style="margin-top:10px">
+                <a href="/uploads/{{ archivo.nombre }}" download class="btn btn-download">Descargar</a>
+                <button onclick="deleteFile('{{ archivo.nombre }}', {{ loop.index }})" class="btn btn-delete">Eliminar</button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="/galeria?page={{ page-1 }}&tipo={{ filtro_tipo }}&q={{ busqueda }}" class="page-btn">&laquo; Ant</a>
+    {% endif %}
+
+    {% set start_page = [1, page - 2] | max %}
+    {% set end_page = [total_pages, page + 2] | min %}
+
+    {% if start_page > 1 %}
+    <a href="/galeria?page=1&tipo={{ filtro_tipo }}&q={{ busqueda }}" class="page-btn">1</a>
+    {% if start_page > 2 %}<span class="page-btn disabled">...</span>{% endif %}
+    {% endif %}
+
+    {% for p in range(start_page, end_page + 1) %}
+    <a href="/galeria?page={{ p }}&tipo={{ filtro_tipo }}&q={{ busqueda }}" class="page-btn {% if p == page %}active{% endif %}">{{ p }}</a>
+    {% endfor %}
+
+    {% if end_page < total_pages %}
+    {% if end_page < total_pages - 1 %}<span class="page-btn disabled">...</span>{% endif %}
+    <a href="/galeria?page={{ total_pages }}&tipo={{ filtro_tipo }}&q={{ busqueda }}" class="page-btn">{{ total_pages }}</a>
+    {% endif %}
+
+    {% if page < total_pages %}
+    <a href="/galeria?page={{ page+1 }}&tipo={{ filtro_tipo }}&q={{ busqueda }}" class="page-btn">Sig &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endif %}
+
+<div id="mediaModal" class="modal" onclick="closeModal()">
+    <div class="modal-header" onclick="event.stopPropagation()">
+        <span class="modal-filename" id="modalFilename"></span>
+        <button class="close-modal" onclick="closeModal()">&times;</button>
+    </div>
+    <img class="modal-content" id="modalImage" style="display:none;">
+    <video class="modal-video" id="modalVideo" controls style="display:none;"></video>
+    <audio id="modalAudio" controls style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;max-width:500px;"></audio>
+</div>
+
+<script>
+function openMedia(type, src, filename) {
+    const modal = document.getElementById('mediaModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalVideo = document.getElementById('modalVideo');
+    const modalAudio = document.getElementById('modalAudio');
+    const modalFilename = document.getElementById('modalFilename');
+
+    modalImage.style.display = 'none';
+    modalVideo.style.display = 'none';
+    modalAudio.style.display = 'none';
+
+    modalFilename.textContent = filename;
+
+    if (type === 'imagen') {
+        modalImage.src = src;
+        modalImage.style.display = 'block';
+    } else if (type === 'video') {
+        modalVideo.src = src;
+        modalVideo.style.display = 'block';
+        modalVideo.load();
+    } else if (type === 'audio') {
+        modalAudio.src = src;
+        modalAudio.style.display = 'block';
+        modalAudio.load();
+    }
+
+    modal.style.display = 'block';
+}
+
+function closeModal() {
+    const modal = document.getElementById('mediaModal');
+    document.getElementById('modalVideo').pause();
+    document.getElementById('modalAudio').pause();
+    modal.style.display = 'none';
+}
+
+function deleteFile(filename, cardIndex) {
+    if (!confirm('Eliminar "' + filename + '"?')) return;
+
+    fetch('/delete/' + filename, { method: 'DELETE' })
+    .then(r => r.json())
+    .then(data => {
+        if (data.message) {
+            const card = document.getElementById('card-' + cardIndex);
+            card.style.transition = 'all .3s';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.8)';
+            setTimeout(() => location.reload(), 300);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(() => alert('Error de conexion'));
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+});
+
+document.getElementById('searchBox').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        const q = e.target.value.trim();
+        const tipo = new URLSearchParams(window.location.search).get('tipo') || '';
+        window.location.href = '/galeria?q=' + encodeURIComponent(q) + '&tipo=' + encodeURIComponent(tipo);
+    }
+});
+</script>
+
+</body>
+</html>
